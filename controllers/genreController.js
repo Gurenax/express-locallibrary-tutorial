@@ -152,10 +152,71 @@ exports.genre_delete_post = function(req, res, next) {
 
 // Display Genre update form on GET
 exports.genre_update_get = function(req, res) {
-  res.send("NOT IMPLEMENTED: Genre update GET");
+  req.sanitize("id").escape();
+  req.sanitize("id").trim();
+
+  //Get book, authors and genres for form
+  async.parallel({
+    genre: function(callback) {
+      Genre.findById(req.params.id).exec(callback);
+    },
+  },
+  function(err, results) {
+    if (err) {
+      return next(err);
+    }
+
+    res.render("genre_form", {
+      title: "Update Genre",
+      genre: results.genre
+    });
+  });
 };
 
 // Handle Genre update on POST
 exports.genre_update_post = function(req, res) {
-  res.send("NOT IMPLEMENTED: Genre update POST");
+  // Sanitize id
+  req.sanitize("id").escape();
+  req.sanitize("id").trim();
+
+  //Check that the name field is not empty
+  req.checkBody("name", "Genre name required").notEmpty();
+  
+    //Trim and escape the name field.
+    req.sanitize("name").escape();
+    req.sanitize("name").trim();
+  
+    //Run the validators
+    var errors = req.validationErrors();
+  
+    //Create a genre object with escaped and trimmed data.
+    var genre = new Genre({ name: req.body.name, _id: req.params.id });
+  
+    if (errors) {
+      //If there are errors render the form again, passing the previously entered values and errors
+      res.render("genre_form", { title: "Update Genre", genre: genre, errors: errors });
+      return;
+    } else {
+      // Data from form is valid. Update the record.     
+      //Check if Genre with same name already exists
+      Genre.findOne({ name: req.body.name }).exec(function(err, found_genre) {
+        console.log("found_genre: " + found_genre);
+        if (err) {
+          return next(err);
+        }
+  
+        if (found_genre) {
+          //Genre exists, redirect to its detail page
+          res.redirect(found_genre.url);
+        } else {
+          Genre.findByIdAndUpdate(req.params.id, genre, {}, function(err, thegenre) {
+            if (err) {
+              return next(err);
+            }
+            //successful - redirect to book detail page.
+            res.redirect(thegenre.url);
+          });
+        }
+      });
+    }
 };
