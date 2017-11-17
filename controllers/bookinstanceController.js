@@ -214,7 +214,7 @@ exports.bookinstance_update_post = function(req, res, next) {
       }
       //Successful, so render
       res.render("bookinstance_form", {
-        title: "Create BookInstance",
+        title: "Update BookInstance",
         book_list: books,
         selected_book: bookinstance.book._id,
         errors: errors,
